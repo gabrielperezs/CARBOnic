@@ -18,7 +18,7 @@ type Telegram struct {
 }
 
 func (t *Telegram) start() {
-	t.chSender = make(chan *Message, 5)
+	t.chSender = make(chan *Message)
 	go t.sender()
 	go t.receiver()
 }

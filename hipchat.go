@@ -24,7 +24,7 @@ type HipChat struct {
 }
 
 func (h *HipChat) start() {
-	h.chSender = make(chan *Message, 5)
+	h.chSender = make(chan *Message)
 	go h.receiver()
 	go h.sender()
 }
