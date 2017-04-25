@@ -1,0 +1,41 @@
+
+Name = "All the alarms"
+
+[[Group]]
+    Name = "Project 1"
+
+    [Group.Telegram]
+    Name = "Sys"
+    Token = "999999:*****************"
+    Group = -11111
+    MinScore = 10
+
+    [Group.HipChat]
+    Name = "Sys"
+    Token = "test"
+    MinScore = 5
+
+    [[Group.SQS]]
+    Url = "https://sqs.eu-west-1.amazonaws.com/8888888888888/TEST_ALARM_1"
+    Region = "eu-west-1"
+    Profile = "apsl_dotw"
+    Score = 10
+
+    [[Group.SQS]]
+    Url = "https://sqs.eu-west-1.amazonaws.com/88888888888888/ALARM_LEVEL2"
+    Region = "eu-west-1"
+    Profile = "apsl_dotw"
+    Score = 5
+
+
+[[Group]]
+    Name = "Project 2"
+
+    [Group.Telegram]
+    Name = "Sys"
+    Token = "44444:******"
+    Group = -2222
+
+    [Group.HipChat]
+    Name = "Sys"
+    Token = "test"
