@@ -9,7 +9,7 @@ type Telegram struct {
 
 	Group int64
 
-	Bot *tgbotapi.BotAPI
+	Bot *TelegramBOT
 
 	MinScore int
 	chSender chan *Message
@@ -17,10 +17,13 @@ type Telegram struct {
 	ParentGroup *Group
 }
 
+const (
+	telegramMaxMessages = 100
+)
+
 func (t *Telegram) start() {
-	t.chSender = make(chan *Message)
+	t.chSender = make(chan *Message, telegramMaxMessages)
 	go t.sender()
-	go t.receiver()
 }
 
 func (t *Telegram) sender() {
@@ -36,23 +39,6 @@ func (t *Telegram) sender() {
 
 		msg := tgbotapi.NewMessage(t.Group, alarm.msg)
 		t.Bot.Send(msg)
-	}
-}
-
-func (t *Telegram) receiver() {
-	t.Bot.Debug = false
-
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates, _ := t.Bot.GetUpdatesChan(u)
-
-	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
-
-		commands(t, update.Message.From.String(), update.Message.Text)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 const (
 	cmdCATCH = "catch"
+	cmdPURGE = "purge"
 	cmdPING  = "ping"
 )
 
@@ -36,19 +37,44 @@ func commands(plugin Plugin, from, msg string) {
 	g := plugin.getParentGroup()
 
 	msg = trimSpace.ReplaceAllString(strings.ToLower(msg[1:]), " ")
-	log.Printf("[%s] - %s - %s - Command: %s", g.Name, plugin.getName(), msg)
+
+	log.Printf("[%s] - Command: %s - %s", g.Name, plugin.getName(), msg)
 	parts := strings.Split(msg, " ")
 
 	if parts[0] == cmdCATCH {
+		maxLevelAlarms := plugin.getMinScore()
 		for _, sqs := range g.SQS {
-			if int(g.getMsgScore()) >= sqs.Score || (len(parts) > 1 && parts[1] == "all") || plugin.getMinScore() >= sqs.Score {
-				log.Printf("[%s] - %d - Purge SQS %s", g.Name, sqs.Score, sqs.Url)
-				sqs.purge()
+			if sqs.hasAlarms() {
+				if sqs.Score > maxLevelAlarms {
+					maxLevelAlarms = sqs.Score
+				}
+				log.Printf("[%s] - %d - Clean SQS %s", g.Name, sqs.Score, sqs.Url)
+				go sqs.clean()
 			}
 		}
+
 		g.chReciv <- &Message{
-			score: int(g.getMsgScore()),
-			msg:   fmt.Sprintf("[%s] catched the alarms", from),
+			score: maxLevelAlarms,
+			msg:   fmt.Sprintf("[%s] caught last alarms", from),
+		}
+		return
+	}
+
+	if parts[0] == cmdPURGE {
+		maxLevelAlarms := plugin.getMinScore()
+		for _, sqs := range g.SQS {
+			if sqs.hasAlarms() {
+				if sqs.Score > maxLevelAlarms {
+					maxLevelAlarms = sqs.Score
+				}
+				log.Printf("[%s] - %d - PURGE SQS %s", g.Name, sqs.Score, sqs.Url)
+				go sqs.purge()
+			}
+		}
+
+		g.chReciv <- &Message{
+			score: maxLevelAlarms,
+			msg:   fmt.Sprintf("[%s] purged all the alarms", from),
 		}
 		return
 	}

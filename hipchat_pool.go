@@ -7,13 +7,9 @@ import (
 	"github.com/tbruyelle/hipchat-go/hipchat"
 )
 
-const (
-	hipChatInterval = 5
-)
-
 var (
-	mHipChat   = &sync.Mutex{}
-	CwHipChats = make(map[string]*HipChat)
+	mHipChat       = &sync.Mutex{}
+	hipchatClients = make(map[string]*hipchat.Client)
 )
 
 func getHipChat(g *Group) {
@@ -32,23 +28,16 @@ func getHipChat(g *Group) {
 	defer mHipChat.Unlock()
 
 	h := g.HipChat
+
+	if _, ok := hipchatClients[h.Token]; ok {
+		g.HipChat.Client = hipchatClients[h.Token]
+	} else {
+		h.Client = hipchat.NewClient(h.Token)
+	}
+
 	h.ParentGroup = g
 
-	if _, ok := CwHipChats[h.Token]; ok {
-		return
-	}
-
-	if h.Token == "" {
-		return
-	}
-
-	if h.RoomID == "" {
-		return
-	}
-
-	h.Client = hipchat.NewClient(h.Token)
-
-	CwHipChats[h.Token] = h
+	hipchatClients[h.Token] = h.Client
 
 	h.start()
 

@@ -2,45 +2,37 @@ package main
 
 import (
 	"log"
-	"sync/atomic"
 	"time"
 )
 
+const (
+	groupMaxMessages = 100
+)
+
 type Group struct {
-	Name         string
-	Telegram     *Telegram
-	HipChat      *HipChat
-	SQS          []*SQS
-	chReciv      chan *Message
-	lastMsgScore int64
+	Name     string
+	Telegram *Telegram
+	HipChat  *HipChat
+	SQS      []*SQS
+	chReciv  chan *Message
 }
 
 func (g *Group) start() {
 
-	g.chReciv = make(chan *Message)
+	g.chReciv = make(chan *Message, groupMaxMessages)
 
 	getTelegram(g)
 	getHipChat(g)
 
-	go g.pullSQS()
-	go g.groupMessages()
-
-}
-
-func (g *Group) setMsgScore(score int) {
-	atomic.StoreInt64(&g.lastMsgScore, int64(score))
-}
-
-func (g *Group) getMsgScore() int64 {
-	return atomic.LoadInt64(&g.lastMsgScore)
-}
-
-func (g *Group) purgeSQS() {
-	if len(g.SQS) > 0 {
-		for _, sqs := range g.SQS {
-			sqs.purge()
-		}
+	for _, sqs := range g.SQS {
+		sqs.startSession()
 	}
+
+	go g.groupMessages()
+	go g.pullSQS()
+
+	log.Println(g.Name, "stated")
+
 }
 
 func (g *Group) pullSQS() {
@@ -51,7 +43,7 @@ func (g *Group) pullSQS() {
 			}
 		}
 
-		<-time.After(15 * 1000 * time.Millisecond)
+		<-time.After(8 * 1000 * time.Millisecond)
 	}
 }
 
@@ -61,14 +53,13 @@ func (g *Group) groupMessages() {
 
 		message := <-g.chReciv
 
-		g.setMsgScore(message.score)
-
 		log.Printf("[%s] - %d - %s", g.Name, message.score, message.msg)
 
 		if g.Telegram != nil && message.score >= g.Telegram.MinScore {
 			select {
 			case g.Telegram.chSender <- message:
 			default:
+				log.Println("ERROR: telegram channel full")
 			}
 		}
 
@@ -76,6 +67,7 @@ func (g *Group) groupMessages() {
 			select {
 			case g.HipChat.chSender <- message:
 			default:
+				log.Println("ERROR: HipChat channel full")
 			}
 		}
 

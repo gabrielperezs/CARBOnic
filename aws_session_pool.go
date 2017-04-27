@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	sessMutex sync.Mutex
+	sessMutex sync.RWMutex
 	Sessions  = make(map[string]*Session)
 )
 
@@ -31,8 +31,8 @@ type Session struct {
 
 func NewSession(profile string, region string) *Session {
 
-	sessMutex.Lock()
-	defer sessMutex.Unlock()
+	sessMutex.RLock()
+	defer sessMutex.RUnlock()
 
 	key := fmt.Sprintf("%s:%s", profile, region)
 

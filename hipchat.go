@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -23,8 +24,14 @@ type HipChat struct {
 	ParentGroup *Group
 }
 
+const (
+	hipChatInterval    = 15
+	hipChatMaxMessages = 100
+)
+
 func (h *HipChat) start() {
-	h.chSender = make(chan *Message)
+	h.chSender = make(chan *Message, hipChatMaxMessages)
+
 	go h.receiver()
 	go h.sender()
 }
@@ -32,8 +39,25 @@ func (h *HipChat) start() {
 func (h *HipChat) sender() {
 	for {
 		message := <-h.chSender
-		notifRq := &hipchat.NotificationRequest{Message: message.msg}
-		_, _ = h.Client.Room.Notification(h.RoomID, notifRq)
+
+		if message.score > 5 {
+			notifRq := &hipchat.NotificationRequest{
+				Color:   "red",
+				Message: fmt.Sprintf("@all %s", message.msg),
+			}
+			_, err := h.Client.Room.Notification(h.RoomID, notifRq)
+			if err != nil {
+				log.Println("ERROR [%s]: %s", h.Name, err)
+			}
+		} else {
+			msgReq := &hipchat.RoomMessageRequest{
+				Message: fmt.Sprintf("%s", message.msg),
+			}
+			_, err := h.Client.Room.Message(h.RoomID, msgReq)
+			if err != nil {
+				log.Println("ERROR [%s]: %s", h.Name, err)
+			}
+		}
 	}
 }
 

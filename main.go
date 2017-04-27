@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 
 	"github.com/BurntSushi/toml"
 )
 
 const (
-	version = "0.1"
+	version = "0.2"
 )
 
 type Config struct {
@@ -24,6 +25,8 @@ func main() {
 	var config string
 	flag.StringVar(&config, "config", "config.toml", "a string var")
 	flag.Parse()
+
+	log.Printf("Starting v%s - %s", version, config)
 
 	_, err := toml.DecodeFile(config, &conf)
 	if err != nil {
