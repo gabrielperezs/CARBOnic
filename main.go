@@ -5,20 +5,27 @@ import (
 	"fmt"
 	"log"
 
+	"time"
+
 	"github.com/BurntSushi/toml"
+	"github.com/spaolacci/murmur3"
+	"github.com/wunderlist/ttlcache"
 )
 
 const (
-	version = "0.2"
+	version = "0.3"
 )
 
 type Config struct {
 	Group []*Group `toml:"Group"`
 }
 
-var conf Config
+var (
+	conf Config
 
-var chMain = make(chan bool)
+	chMain = make(chan bool)
+	cache  = ttlcache.NewCache(time.Millisecond * 2500)
+)
 
 func main() {
 
@@ -31,7 +38,7 @@ func main() {
 	_, err := toml.DecodeFile(config, &conf)
 	if err != nil {
 		// handle error
-		fmt.Println(err)
+		log.Panic(err)
 		return
 	}
 
@@ -40,4 +47,19 @@ func main() {
 	}
 
 	<-chMain
+}
+
+func ignoreDup(key string) bool {
+	hash := fmt.Sprint(murmur3.Sum32([]byte(key)))
+
+	var found bool
+
+	_, found = cache.Get(hash)
+	if found {
+		return false
+	}
+
+	cache.Set(hash, "1")
+
+	return true
 }

@@ -1,6 +1,5 @@
 package main
 
-import "gopkg.in/telegram-bot-api.v4"
 import "log"
 
 type Telegram struct {
@@ -29,16 +28,15 @@ func (t *Telegram) start() {
 func (t *Telegram) sender() {
 
 	for {
+		message := <-t.chSender
+
 		if t.Bot == nil {
 			log.Println("Telegram was not correctly initialiced", t.Group, t.Name)
 			getTelegram(t.ParentGroup)
 			return
 		}
 
-		alarm := <-t.chSender
-
-		msg := tgbotapi.NewMessage(t.Group, alarm.msg)
-		t.Bot.Send(msg)
+		t.Bot.Send(t.Group, message)
 	}
 }
 

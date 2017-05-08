@@ -3,13 +3,14 @@ package main
 import (
 	"log"
 	"sync"
-
-	"gopkg.in/telegram-bot-api.v4"
+	"time"
 )
 
 var (
 	mTelegram       = &sync.Mutex{}
 	telegramClients = make(map[string]*TelegramBOT)
+
+	limitRepeatMsg time.Duration = time.Second * 10
 )
 
 func getTelegram(g *Group) {
@@ -28,18 +29,19 @@ func getTelegram(g *Group) {
 	defer mTelegram.Unlock()
 
 	t := g.Telegram
+	log.Printf("Group %s on Telegram %d", g.Name, t.Group)
 
 	if _, ok := telegramClients[t.Token]; ok {
 		t.Bot = telegramClients[t.Token]
 		t.Bot.related = append(t.Bot.related, t)
 	} else {
 		t.Bot = &TelegramBOT{}
-		err := g.Telegram.Bot.connect(t.Token)
+		err := t.Bot.connect(t.Token)
 		if err != nil {
 			return
 		}
 		t.Bot.related = append(t.Bot.related, t)
-		go g.Telegram.Bot.listener()
+		go t.Bot.listener()
 	}
 
 	t.ParentGroup = g
@@ -49,46 +51,4 @@ func getTelegram(g *Group) {
 	t.start()
 
 	return
-}
-
-type TelegramBOT struct {
-	bot     *tgbotapi.BotAPI
-	related []*Telegram
-}
-
-func (tb *TelegramBOT) connect(token string) error {
-	var err error
-	tb.bot, err = tgbotapi.NewBotAPI(token)
-	if err != nil {
-		log.Println("Telegram connection error:", token, err)
-		return err
-	}
-
-	return nil
-}
-
-func (tb *TelegramBOT) listener() {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates, err := tb.bot.GetUpdatesChan(u)
-	if err != nil {
-		log.Printf("ERROR telegram: %s", err)
-	}
-
-	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
-
-		for _, t := range tb.related {
-			if t.Group == update.Message.Chat.ID {
-				commands(t, update.Message.From.String(), update.Message.Text)
-			}
-		}
-	}
-}
-
-func (tb *TelegramBOT) Send(msg tgbotapi.MessageConfig) {
-	tb.bot.Send(msg)
 }

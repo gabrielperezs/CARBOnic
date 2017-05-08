@@ -1,15 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
-
-	"github.com/tbruyelle/hipchat-go/hipchat"
 )
 
 var (
-	mHipChat       = &sync.Mutex{}
-	hipchatClients = make(map[string]*hipchat.Client)
+	mHipChat              = &sync.Mutex{}
+	hipchatClients        = make(map[string]*HipChatPull)
+	hipChatInterval int32 = 3 // Will be modify with random 0 to 4
 )
 
 func getHipChat(g *Group) {
@@ -29,15 +29,20 @@ func getHipChat(g *Group) {
 
 	h := g.HipChat
 
-	if _, ok := hipchatClients[h.Token]; ok {
-		g.HipChat.Client = hipchatClients[h.Token]
+	key := fmt.Sprintf("%s:%s", h.RoomID, h.Token)
+	log.Printf("Group %s on HipChat %s", g.Name, h.RoomID)
+
+	if _, ok := hipchatClients[key]; ok {
+		h.Pull = hipchatClients[key]
 	} else {
-		h.Client = hipchat.NewClient(h.Token)
+		h.Pull = newHipChatPull(h.RoomID, h.Token)
 	}
+
+	h.Pull.related = append(h.Pull.related, h)
 
 	h.ParentGroup = g
 
-	hipchatClients[h.Token] = h.Client
+	hipchatClients[key] = h.Pull
 
 	h.start()
 
