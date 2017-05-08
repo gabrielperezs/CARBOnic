@@ -59,7 +59,7 @@ func (g *Group) groupMessages() {
 			select {
 			case g.Telegram.chSender <- message:
 			default:
-				log.Println("ERROR: telegram channel full")
+				log.Printf("ERROR telegram %d channel full", g.Telegram.Group)
 			}
 		}
 
@@ -67,7 +67,7 @@ func (g *Group) groupMessages() {
 			select {
 			case g.HipChat.chSender <- message:
 			default:
-				log.Println("ERROR: HipChat channel full")
+				log.Printf("ERROR: HipChat %s channel full", g.HipChat.RoomID)
 			}
 		}
 

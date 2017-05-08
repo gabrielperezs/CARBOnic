@@ -83,7 +83,7 @@ func (s *SQS) purge() {
 		QueueUrl: aws.String(s.Url),
 	}
 
-	// Example sending a request using the PurgeQueueRequest method.
+	// Sending a request using the PurgeQueueRequest method.
 	req, resp := s.sess.svc.PurgeQueueRequest(params)
 
 	err := req.Send()

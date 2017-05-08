@@ -41,9 +41,13 @@ func commands(plugin Plugin, from, msg string) {
 	log.Printf("[%s] - Command: %s - %s", g.Name, plugin.getName(), msg)
 	parts := strings.Split(msg, " ")
 
-	if parts[0] == cmdCATCH {
-		maxLevelAlarms := plugin.getMinScore()
+	maxLevelAlarms := plugin.getMinScore()
+
+	switch parts[0] {
+	case cmdCATCH:
+
 		for _, sqs := range g.SQS {
+			fmt.Println(sqs.Url)
 			if sqs.hasAlarms() {
 				if sqs.Score > maxLevelAlarms {
 					maxLevelAlarms = sqs.Score
@@ -58,10 +62,9 @@ func commands(plugin Plugin, from, msg string) {
 			msg:   fmt.Sprintf("[%s] caught last alarms", from),
 		}
 		return
-	}
 
-	if parts[0] == cmdPURGE {
-		maxLevelAlarms := plugin.getMinScore()
+	case cmdPURGE:
+
 		for _, sqs := range g.SQS {
 			if sqs.hasAlarms() {
 				if sqs.Score > maxLevelAlarms {
@@ -77,13 +80,14 @@ func commands(plugin Plugin, from, msg string) {
 			msg:   fmt.Sprintf("[%s] purged all the alarms", from),
 		}
 		return
-	}
 
-	if parts[0] == cmdPING {
+	case cmdPING:
+
 		g.chReciv <- &Message{
 			score: 10,
 			msg:   "Ping (yes, i'm alive)",
 		}
 		return
 	}
+
 }
