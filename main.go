@@ -23,6 +23,8 @@ type Config struct {
 var (
 	conf Config
 
+	debug = false
+
 	chMain = make(chan bool)
 	cache  = ttlcache.NewCache(time.Millisecond * 2500)
 )
@@ -31,7 +33,13 @@ func main() {
 
 	var config string
 	flag.StringVar(&config, "config", "config.toml", "a string var")
+	flag.BoolVar(&debug, "debug", false, "Debug mode")
 	flag.Parse()
+
+	if !debug {
+		log.SetFlags(0)
+		log.SetOutput(new(logWriter))
+	}
 
 	log.Printf("Starting v%s - %s", version, config)
 
@@ -62,4 +70,11 @@ func ignoreDup(key string) bool {
 	cache.Set(hash, "1")
 
 	return true
+}
+
+type logWriter struct {
+}
+
+func (writer logWriter) Write(bytes []byte) (int, error) {
+	return fmt.Print(string(bytes))
 }
