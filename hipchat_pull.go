@@ -11,7 +11,7 @@ import (
 
 const (
 	hipchatRetry          = 30 // 30 seconds
-	hipChatInterval int32 = 6  // Will be modify with random 0 to 5
+	hipChatInterval int32 = 15 // Will be modify with random 0 to 5
 )
 
 func newHipChatPull(roomID, token string) *HipChatPull {
@@ -76,7 +76,8 @@ func (hb *HipChatPull) receiver() {
 		})
 
 		if err != nil {
-			log.Printf("HipChat Pull ERROR [RoomID %s] [code %d]: %s", hb.roomID, resp.StatusCode, err)
+			log.Printf("HipChat Pull ERROR [RoomID %s]: %s", hb.roomID, err)
+			log.Printf("HipChat Pull ERROR [RoomID %s] response: %#v", hb.roomID, resp)
 			log.Printf("HipChat Pull [RoomID %s] re-try in %d seconds", hb.roomID, hipchatRetry)
 
 			<-time.After(time.Second * hipchatRetry)
