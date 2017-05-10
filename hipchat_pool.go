@@ -7,9 +7,8 @@ import (
 )
 
 var (
-	mHipChat              = &sync.Mutex{}
-	hipchatClients        = make(map[string]*HipChatPull)
-	hipChatInterval int32 = 3 // Will be modify with random 0 to 4
+	mHipChat       = &sync.Mutex{}
+	hipchatClients = make(map[string]*HipChatPull)
 )
 
 func getHipChat(g *Group) {

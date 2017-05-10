@@ -9,6 +9,11 @@ import (
 	"github.com/tbruyelle/hipchat-go/hipchat"
 )
 
+const (
+	hipchatRetry          = 30 // 30 seconds
+	hipChatInterval int32 = 6  // Will be modify with random 0 to 5
+)
+
 func newHipChatPull(roomID, token string) *HipChatPull {
 	hb := &HipChatPull{
 		roomID:     roomID,
@@ -46,7 +51,7 @@ func (hb *HipChatPull) sender(message *Message) {
 		}
 		_, err := hb.client.Room.Notification(hb.roomID, notifRq)
 		if err != nil {
-			log.Printf("ERROR [%s]: %s", hb.roomID, err)
+			log.Printf("HipChat Pull ERROR [%s]: %s", hb.roomID, err)
 		}
 	} else {
 		msgReq := &hipchat.RoomMessageRequest{
@@ -54,7 +59,7 @@ func (hb *HipChatPull) sender(message *Message) {
 		}
 		_, err := hb.client.Room.Message(hb.roomID, msgReq)
 		if err != nil {
-			log.Printf("ERROR [%s]: %s", hb.roomID, err)
+			log.Printf("HipChat Pull ERROR [%s]: %s", hb.roomID, err)
 		}
 	}
 }
@@ -71,11 +76,10 @@ func (hb *HipChatPull) receiver() {
 		})
 
 		if err != nil {
-			log.Printf("ERROR [%s]: %s", hb.roomID, err)
-			log.Printf("Server returns %+v (re-try in 15 seconds)\n", resp)
+			log.Printf("HipChat Pull ERROR [RoomID %s] [code %d]: %s", hb.roomID, resp.StatusCode, err)
+			log.Printf("HipChat Pull [RoomID %s] re-try in %d seconds", hb.roomID, hipchatRetry)
 
-			// Don't try again in the next 15 seconds
-			<-time.After(time.Second * 15)
+			<-time.After(time.Second * hipchatRetry)
 			continue
 		}
 
@@ -110,7 +114,7 @@ func (hb *HipChatPull) receiver() {
 			hb.maxResults = 10
 		}
 
-		<-time.After(time.Duration(hipChatInterval+rand.Int31n(4)) * time.Second)
+		<-time.After(time.Duration(hipChatInterval+rand.Int31n(5)) * time.Second)
 	}
 
 }
