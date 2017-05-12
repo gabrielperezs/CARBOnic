@@ -35,13 +35,8 @@ func getTelegram(g *Group) {
 		t.Bot = telegramClients[t.Token]
 		t.Bot.related = append(t.Bot.related, t)
 	} else {
-		t.Bot = &TelegramBOT{}
-		err := t.Bot.connect(t.Token)
-		if err != nil {
-			return
-		}
+		t.Bot = newTelegramBOT(t.Token)
 		t.Bot.related = append(t.Bot.related, t)
-		go t.Bot.listener()
 	}
 
 	t.ParentGroup = g

@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	hipchatRetry          = 30 // 30 seconds
-	hipChatInterval int32 = 15 // Will be modify with random 0 to 5
+	hipchatRetry          = 60 // 60 seconds
+	hipChatInterval int32 = 30 // Will be modify with random 0 to 5
 )
 
 func newHipChatPull(roomID, token string) *HipChatPull {
