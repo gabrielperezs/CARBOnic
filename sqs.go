@@ -110,22 +110,25 @@ func (s *SQS) storeMessage(msg *sqs.Message) {
 	})
 }
 
-func (s *SQS) pullSQS(ch chan *Message) {
+func (s *SQS) pullSQS(ch chan *Message) error {
 
 	params := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(s.Url),
-		MaxNumberOfMessages: aws.Int64(5),
+		MaxNumberOfMessages: aws.Int64(10),
+		WaitTimeSeconds:     aws.Int64(15),
 	}
 	resp, err := s.sess.svc.ReceiveMessage(params)
 
 	if err != nil {
-		log.Println("Error", err)
+		log.Printf("ERROR: AWS session on %s - %s", s.Url, err)
 
 		ch <- &Message{
 			score: 5,
 			msg:   fmt.Sprintf("Error reading from sqs: %s", err),
 		}
-		return
+
+		<-time.After(15 * time.Second)
+		return err
 	}
 
 	// Pretty-print the response data.
@@ -178,4 +181,6 @@ func (s *SQS) pullSQS(ch chan *Message) {
 		}
 
 	}
+
+	return nil
 }

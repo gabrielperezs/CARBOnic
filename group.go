@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"time"
+	"sync"
 )
 
 const (
@@ -38,12 +38,20 @@ func (g *Group) start() {
 func (g *Group) pullSQS() {
 	for {
 		if len(g.SQS) > 0 {
+			wg := sync.WaitGroup{}
 			for _, sqs := range g.SQS {
-				sqs.pullSQS(g.chReciv)
+				wg.Add(1)
+				go func(sqs *SQS) {
+					defer wg.Done()
+					sqs.pullSQS(g.chReciv)
+				}(sqs)
 			}
+			wg.Wait()
+			continue
 		}
 
-		<-time.After(8 * 1000 * time.Millisecond)
+		log.Printf("ERROR: No SQS resources in the group %s", g.Name)
+		return
 	}
 }
 
@@ -59,7 +67,7 @@ func (g *Group) groupMessages() {
 			select {
 			case g.Telegram.chSender <- message:
 			default:
-				log.Printf("ERROR telegram %d channel full", g.Telegram.Group)
+				log.Printf("ERROR: telegram %d channel full", g.Telegram.Group)
 			}
 		}
 

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"gopkg.in/telegram-bot-api.v4"
 )
@@ -51,7 +52,8 @@ func (tb *TelegramBOT) listener() {
 
 	updates, err := tb.bot.GetUpdatesChan(u)
 	if err != nil {
-		log.Printf("ERROR telegram: %s", err)
+		log.Printf("ERROR: Telegram, can't read from channel - %s", err)
+		<-time.After(15 * time.Second)
 		return
 	}
 
@@ -80,7 +82,7 @@ func (tb *TelegramBOT) listener() {
 	}
 
 	if debug {
-		log.Printf("***** Telegram listener ended %s", tb.bot.Self.UserName)
+		log.Printf("Telegram listener ended %s", tb.bot.Self.UserName)
 	}
 }
 
