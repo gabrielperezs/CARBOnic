@@ -3,6 +3,10 @@ package main
 import (
 	"log"
 	"sync"
+
+	"github.com/gabrielperezs/CARBOnic/chats"
+	"github.com/gabrielperezs/CARBOnic/inputs"
+	"github.com/gabrielperezs/CARBOnic/lib"
 )
 
 const (
@@ -10,75 +14,123 @@ const (
 )
 
 type Group struct {
-	Name     string
-	Telegram *Telegram
-	HipChat  *HipChat
-	SQS      []*SQS
-	chReciv  chan *Message
+	sync.Mutex
+	sync.WaitGroup
+
+	Name  string
+	Chat  []interface{}
+	Input []interface{}
+
+	chats  []lib.Chat
+	inputs []lib.Input
+
+	Ch chan *lib.Message
+
+	done    chan bool
+	exiting bool
+}
+
+func (g *Group) GetName() string {
+	return g.Name
+}
+
+func (g *Group) GetChats() []lib.Chat {
+	return g.chats
+}
+
+func (g *Group) GetInputs() []lib.Input {
+	return g.inputs
+}
+
+func (g *Group) Chan() chan *lib.Message {
+	return g.Ch
 }
 
 func (g *Group) start() {
 
-	g.chReciv = make(chan *Message, groupMaxMessages)
+	g.Ch = make(chan *lib.Message, groupMaxMessages)
 
-	getTelegram(g)
-	getHipChat(g)
-
-	for _, sqs := range g.SQS {
-		sqs.startSession()
-	}
-
-	go g.groupMessages()
-	go g.pullSQS()
-
-	log.Println(g.Name, "stated")
-
-}
-
-func (g *Group) pullSQS() {
-	for {
-		if len(g.SQS) > 0 {
-			wg := sync.WaitGroup{}
-			for _, sqs := range g.SQS {
-				wg.Add(1)
-				go func(sqs *SQS) {
-					defer wg.Done()
-					sqs.pullSQS(g.chReciv)
-				}(sqs)
-			}
-			wg.Wait()
+	for _, cfg := range g.Chat {
+		c, err := chats.Get(cfg)
+		if err != nil {
+			log.Printf("ERROR: %s", err)
 			continue
 		}
 
-		log.Printf("ERROR: No SQS resources in the group %s", g.Name)
-		return
+		c.SetGroup(g)
+
+		g.Lock()
+		g.chats = append(g.chats, c)
+		g.Unlock()
+	}
+
+	for _, cfg := range g.Input {
+		i, err := inputs.Get(cfg)
+		if err != nil {
+			log.Printf("ERROR: %s", err)
+			continue
+		}
+
+		i.SetGroup(g)
+
+		g.Lock()
+		g.inputs = append(g.inputs, i)
+		g.Unlock()
+	}
+
+	go g.listen()
+
+	log.Printf("Group start: %s (inputs: %d, chats: %d)", g.Name, len(g.inputs), len(g.chats))
+
+}
+
+func (g *Group) listen() {
+	for message := range g.Ch {
+		log.Printf("[%s] - %d - %s", g.Name, message.Score, message.Msg)
+		for _, chat := range g.chats {
+			if message.Score >= chat.MinScore() {
+
+				g.Lock()
+				e := g.exiting
+				g.Unlock()
+				if e {
+					break
+				}
+
+				select {
+				case chat.Chan() <- message:
+				default:
+					log.Printf("ERROR [%s]: chat channel full", g.Name)
+				}
+			}
+		}
 	}
 }
 
-func (g *Group) groupMessages() {
+func (g *Group) Exit() {
 
-	for {
+	g.Lock()
+	g.exiting = true
+	g.Unlock()
 
-		message := <-g.chReciv
-
-		log.Printf("[%s] - %d - %s", g.Name, message.score, message.msg)
-
-		if g.Telegram != nil && message.score >= g.Telegram.MinScore {
-			select {
-			case g.Telegram.chSender <- message:
-			default:
-				log.Printf("ERROR: telegram %d channel full", g.Telegram.Group)
-			}
-		}
-
-		if g.HipChat != nil && message.score >= g.HipChat.MinScore {
-			select {
-			case g.HipChat.chSender <- message:
-			default:
-				log.Printf("ERROR: HipChat %s channel full", g.HipChat.RoomID)
-			}
-		}
-
+	var wg sync.WaitGroup
+	for _, c := range g.chats {
+		wg.Add(1)
+		go func(c lib.Chat) {
+			defer wg.Done()
+			c.Exit()
+		}(c)
 	}
+	wg.Wait()
 
+	for _, c := range g.inputs {
+		wg.Add(1)
+		go func(c lib.Input) {
+			defer wg.Done()
+			c.DelGroup(g)
+		}(c)
+	}
+	wg.Wait()
+
+	close(g.Ch)
 }

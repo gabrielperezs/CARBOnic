@@ -36,19 +36,22 @@ Config file
 [[Group]]
     Name = "Group 1"
 
-    [Group.Telegram]
+    [[Group.Chat]]
+    Type = "telegram"
     Name = "Telegram client 1"
     Token = "0000000000:ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
     Group = -00000000
     MinScore = 10
 
-    [[Group.SQS]]
+    [[Group.Input]]
+    Type = "sqs"
     Url = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL1"
     Region = "eu-west-1"
     Profile = "project1"
     Score = 10
 
-    [[Group.SQS]]
+    [[Group.Input]]
+    Type = "sqs"
     Url = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL2"
     Region = "eu-west-1"
     Profile = "project1"
@@ -60,26 +63,30 @@ Config file
     Name = "Project 2"
 
     # Same as group 1
-    [Group.Telegram]
+    [[Group.Chat]]
+    Type = "telegram"
     Name = "Telegram client 1"
     Token = "0000000000:ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
     Group = -00000000
     MinScore = 10
 
-    [Group.HipChat]
+    [[Group.Chat]]
+    Type = "hipchat"
     Name = "HipChat client 1"
     Token = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
     RoomID = "999999"
     MinScore = 5
 
-    [[Group.SQS]]
+    [[Group.Input]]
+    Type = "sqs"
     Url = "https://sqs.us-west-2.amazonaws.com/000000000000/PROJECT_2_LEVEL1"
     Region = "us-west-2"
     Profile = "project1"
     Score = 10
 
     # Same as group 1
-    [[Group.SQS]]
+    [[Group.Input]]
+    Type = "sqs"
     Url = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL2"
     Region = "eu-west-1"
     Profile = "project1"
@@ -89,25 +96,29 @@ Config file
 [[Group]]
     Name = "Project 3"
 
-    [Group.Telegram]
+    [[Group.Chat]]
+    Type = "telegram"
     Name = "Telegram client 2"
     Token = "1111111111:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
     Group = -0000001111
     MinScore = 10
 
-    [Group.HipChat]
+    [[Group.Chat]]
+    Type = "hipchat"
     Name = "HipChat client 2"
     Token = "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
     RoomID = "0000111"
     MinScore = 5
 
-    [[Group.SQS]]
+    [[Group.Input]]
+    Type = "sqs"
     Url = "https://sqs.us-west-2.amazonaws.com/000000000000/PROJECT_3_LEVEL1"
     Region = "us-west-2"
     Profile = "project3"
     Score = 10
 
-    [[Group.SQS]]
+    [[Group.Input]]
+    Type = "sqs"
     Url = "https://sqs.eu-west-2.amazonaws.com/000000000000/PROJECT_3_LEVEL2"
     Region = "eu-west-2"
     Profile = "project3"

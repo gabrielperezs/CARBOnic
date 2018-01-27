@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"fmt"
@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	SESSION_INTERVAL time.Duration = 15 * time.Minute
-	SESSION_RETRY    time.Duration = 15 * time.Second
+	SESSION_INTERVAL time.Duration = 1 * time.Hour
+	SESSION_RETRY    time.Duration = 30 * time.Second
 )
 
 var (
@@ -24,9 +24,10 @@ var (
 type Session struct {
 	Profile        string
 	Region         string
-	ChSession      chan bool
-	svc            *sqs.SQS
+	Svc            *sqs.SQS
 	lastConnection time.Time
+	tick           *time.Ticker
+	done           chan bool
 }
 
 func NewSession(profile string, region string) *Session {
@@ -43,8 +44,9 @@ func NewSession(profile string, region string) *Session {
 	s := &Session{
 		Profile:        profile,
 		Region:         region,
-		ChSession:      make(chan bool, 0),
 		lastConnection: time.Now(),
+		tick:           time.NewTicker(SESSION_INTERVAL),
+		done:           make(chan bool, 0),
 	}
 
 	Sessions[key] = s
@@ -58,18 +60,15 @@ func NewSession(profile string, region string) *Session {
 
 func (s *Session) loopSession() {
 
-	ti := time.Tick(SESSION_INTERVAL)
+	defer s.tick.Stop()
 
 	for {
 		select {
-		case <-ti:
+		case <-s.tick.C:
 			log.Println("Renew session with AWS", s.lastConnection)
 			s.connect()
-		case <-s.ChSession:
-			if s.lastConnection.Unix() < time.Now().Add(-SESSION_RETRY).Unix() {
-				log.Println("Force reconnect")
-				s.connect()
-			}
+		case <-s.done:
+			return
 		}
 	}
 }
@@ -91,7 +90,7 @@ func (s *Session) connect() {
 		return
 	}
 
-	s.svc = sqs.New(sess, &aws.Config{Region: aws.String(s.Region)})
+	s.Svc = sqs.New(sess, &aws.Config{Region: aws.String(s.Region)})
 
 	s.lastConnection = time.Now()
 }
