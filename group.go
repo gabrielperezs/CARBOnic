@@ -132,5 +132,8 @@ func (g *Group) Exit() {
 	}
 	wg.Wait()
 
-	close(g.Ch)
+	if g.Ch != nil {
+		close(g.Ch)
+		g.Ch = nil
+	}
 }

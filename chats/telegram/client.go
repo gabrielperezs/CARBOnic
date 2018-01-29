@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -69,14 +70,21 @@ func (tb *TelegramBOT) listener() {
 
 		if !group {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Hello, i'm alive. Please use the groups to send commands.")
-			tb.bot.Send(msg)
+			go tb.bot.Send(msg)
 		}
 	}
 }
 
 func (tb *TelegramBOT) Send(g int64, m *lib.Message) error {
+
+	// If the same message was sent few seconds ago just discard it
+	if lib.IsDupMessage(fmt.Sprintf("telegram_%d", g), m) {
+		return nil
+	}
+
 	msg := tgbotapi.NewMessage(g, m.Msg)
 	if _, err := tb.bot.Send(msg); err != nil {
+		log.Printf("TELEGRAM ERROR: Sending message: %s", err)
 		return err
 	}
 	return nil

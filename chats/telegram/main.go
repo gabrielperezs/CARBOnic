@@ -81,9 +81,7 @@ type Telegram struct {
 
 func (t *Telegram) listener() {
 	for m := range t.ch {
-		if err := t.conn.Send(t.cfg.Group, m); err != nil {
-			log.Printf("TELEGRAM ERROR: Sending message: %s", err)
-		}
+		go t.conn.Send(t.cfg.Group, m)
 	}
 }
 

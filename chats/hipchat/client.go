@@ -43,6 +43,11 @@ type HipChatClient struct {
 
 func (hb *HipChatClient) sender(roomID string, message *lib.Message) {
 
+	// If the same message was sent few seconds ago just discard it
+	if lib.IsDupMessage(fmt.Sprintf("hipchat_%s", roomID), message) {
+		return
+	}
+
 	var err error
 
 	if message.Score > 5 {

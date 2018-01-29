@@ -12,12 +12,11 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/spaolacci/murmur3"
 	"github.com/wunderlist/ttlcache"
 )
 
 const (
-	version = "0.4.0"
+	version = "0.4.1"
 )
 
 type Config struct {
@@ -57,9 +56,7 @@ func main() {
 func reload() {
 
 	mu.Lock()
-	for _, g := range conf.Group {
-		g.Exit()
-	}
+	closeGroups()
 	mu.Unlock()
 
 	var c *Config
@@ -84,6 +81,18 @@ func reload() {
 
 }
 
+func closeGroups() {
+	wg := sync.WaitGroup{}
+	for _, g := range conf.Group {
+		wg.Add(1)
+		go func(g *Group) {
+			defer wg.Done()
+			g.Exit()
+		}(g)
+	}
+	wg.Wait()
+}
+
 func sing() {
 	for {
 		switch <-chSign {
@@ -91,28 +100,11 @@ func sing() {
 			log.Printf("Reloading..")
 			reload()
 		default:
-			for _, g := range conf.Group {
-				g.Exit()
-			}
-			log.Printf("Closing by signal")
+			log.Printf("Closing...")
+			closeGroups()
 			chMain <- true
 		}
 	}
-}
-
-func ignoreDup(key string) bool {
-	hash := fmt.Sprint(murmur3.Sum32([]byte(key)))
-
-	var found bool
-
-	_, found = cache.Get(hash)
-	if found {
-		return false
-	}
-
-	cache.Set(hash, "1")
-
-	return true
 }
 
 type logWriter struct {
