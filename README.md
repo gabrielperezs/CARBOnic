@@ -45,14 +45,14 @@ Config file
 
     [[Group.Input]]
     Type = "sqs"
-    Url = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL1"
+    URL = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL1"
     Region = "eu-west-1"
     Profile = "project1"
     Score = 10
 
     [[Group.Input]]
     Type = "sqs"
-    Url = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL2"
+    URL = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL2"
     Region = "eu-west-1"
     Profile = "project1"
     Score = 5
@@ -79,7 +79,7 @@ Config file
 
     [[Group.Input]]
     Type = "sqs"
-    Url = "https://sqs.us-west-2.amazonaws.com/000000000000/PROJECT_2_LEVEL1"
+    URL = "https://sqs.us-west-2.amazonaws.com/000000000000/PROJECT_2_LEVEL1"
     Region = "us-west-2"
     Profile = "project1"
     Score = 10
@@ -87,7 +87,7 @@ Config file
     # Same as group 1
     [[Group.Input]]
     Type = "sqs"
-    Url = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL2"
+    URL = "https://sqs.eu-west-1.amazonaws.com/000000000000/PROJECT_1_LEVEL2"
     Region = "eu-west-1"
     Profile = "project1"
     Score = 5
@@ -112,14 +112,14 @@ Config file
 
     [[Group.Input]]
     Type = "sqs"
-    Url = "https://sqs.us-west-2.amazonaws.com/000000000000/PROJECT_3_LEVEL1"
+    URL = "https://sqs.us-west-2.amazonaws.com/000000000000/PROJECT_3_LEVEL1"
     Region = "us-west-2"
     Profile = "project3"
     Score = 10
 
     [[Group.Input]]
     Type = "sqs"
-    Url = "https://sqs.eu-west-2.amazonaws.com/000000000000/PROJECT_3_LEVEL2"
+    URL = "https://sqs.eu-west-2.amazonaws.com/000000000000/PROJECT_3_LEVEL2"
     Region = "eu-west-2"
     Profile = "project3"
     Score = 5
