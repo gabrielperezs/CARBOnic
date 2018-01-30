@@ -119,9 +119,12 @@ func (t *Telegram) Exit() {
 
 	t.Lock()
 	t.exiting = true
+	close(t.ch)
+	t.ch = nil
 	t.Unlock()
 
-	close(t.ch)
+	t.conn.Lock()
+	defer t.conn.Unlock()
 
 	var n []*Telegram
 	for _, i := range t.conn.r {
@@ -129,8 +132,6 @@ func (t *Telegram) Exit() {
 			n = append(n, i)
 		}
 	}
-
-	t.conn.Lock()
 	t.conn.r = n
-	t.conn.Unlock()
+
 }

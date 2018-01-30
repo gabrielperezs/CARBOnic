@@ -2,7 +2,6 @@ package lib
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -20,7 +19,6 @@ var (
 func cleanChech(n time.Time) {
 	localCache.Range(func(k, v interface{}) bool {
 		if n.After(v.(time.Time).Add(dupExpiration)) {
-			log.Printf("Deleted %s, %s", k.(string), v.(time.Time).Add(dupExpiration).Sub(n))
 			localCache.Delete(k.(string))
 		}
 		return true

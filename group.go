@@ -87,7 +87,15 @@ func (g *Group) start() {
 }
 
 func (g *Group) listen() {
-	for message := range g.Ch {
+	g.Lock()
+	ch := g.Ch
+	g.Unlock()
+
+	if ch == nil {
+		return
+	}
+
+	for message := range ch {
 		log.Printf("[%s] - %d - %s", g.Name, message.Score, message.Msg)
 		for _, chat := range g.chats {
 			log.Printf("Found chat [%s] %s", g.Name, chat.GetLabel())

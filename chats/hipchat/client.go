@@ -20,9 +20,8 @@ const (
 func newConnection(token string) *HipChatClient {
 
 	hcc := &HipChatClient{
-		token:      token,
-		maxResults: 1,
-		client:     hipchat.NewClient(token),
+		token:  token,
+		client: hipchat.NewClient(token),
 	}
 
 	go hcc.receiver()
@@ -33,12 +32,9 @@ func newConnection(token string) *HipChatClient {
 type HipChatClient struct {
 	sync.Mutex
 
-	token     string
-	client    *hipchat.Client
-	lastMsgID string
-	rooms     sync.Map
-
-	maxResults int
+	token  string
+	client *hipchat.Client
+	rooms  []*HipChat
 }
 
 func (hb *HipChatClient) sender(roomID string, message *lib.Message) {
@@ -66,17 +62,24 @@ func (hb *HipChatClient) sender(roomID string, message *lib.Message) {
 
 func (hb *HipChatClient) receiver() {
 
-	hb.maxResults = 1
-
 	for {
 
-		hb.rooms.Range(func(key, value interface{}) bool {
+		hb.Lock()
+		rooms := hb.rooms
+		hb.Unlock()
 
-			roomID := key.(string)
+		for _, t := range rooms {
+
+			// The room is exiting
+			if t.exiting {
+				continue
+			}
+
+			roomID := t.cfg.RoomID
 
 			hist, resp, err := hb.client.Room.Latest(roomID, &hipchat.LatestHistoryOptions{
-				MaxResults: hb.maxResults,
-				NotBefore:  hb.lastMsgID,
+				MaxResults: t.maxResults,
+				NotBefore:  t.lastMsgID,
 			})
 
 			if err != nil {
@@ -85,12 +88,12 @@ func (hb *HipChatClient) receiver() {
 				log.Printf("HipChat Pull [RoomID %s] re-try in %d seconds", roomID, hipchatRetry)
 
 				time.Sleep(time.Second * hipchatRetry)
-				return true
+				continue
 			}
 
 			for _, m := range hist.Items {
 
-				if m.ID == hb.lastMsgID {
+				if m.ID == t.lastMsgID {
 					continue
 				}
 
@@ -104,27 +107,25 @@ func (hb *HipChatClient) receiver() {
 				}
 
 				msg := m.Message
-				hb.lastMsgID = m.ID
+				t.lastMsgID = m.ID
 
-				if hb.maxResults == 1 {
+				if t.maxResults == 1 {
 					continue
 				}
 
-				for _, g := range value.([]*HipChat) {
-					if lib.IsDupMessage(fmt.Sprintf("hipchat_cmd_%s", g.cfg.RoomID), msg) {
-						continue
-					}
-					cmds.Commands(g, from, msg)
+				if lib.IsDupMessage(fmt.Sprintf("hipchat_cmd_%s", roomID), msg) {
+					continue
 				}
+
+				cmds.Commands(t, from, msg)
 			}
 
-			if hb.maxResults == 1 {
-				hb.maxResults = 10
+			if t.maxResults == 1 {
+				t.maxResults = 10
 			}
 
 			time.Sleep(1 * time.Second)
-			return true
-		})
+		}
 
 		time.Sleep(time.Duration(hipChatInterval+rand.Int31n(5)) * time.Second)
 	}

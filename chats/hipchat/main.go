@@ -48,22 +48,18 @@ func NewOrGet(c map[string]interface{}) (*HipChat, error) {
 	connPool.Store(cfg.Token, havConn)
 
 	t := &HipChat{
-		cfg:   &Config{},
-		chIn:  make(chan *lib.Message, 100),
-		conn:  havConn.(*HipChatClient),
-		group: nil,
+		cfg:        &Config{},
+		chIn:       make(chan *lib.Message, 100),
+		conn:       havConn.(*HipChatClient),
+		group:      nil,
+		maxResults: 1,
 	}
 	// Copy configuration
 	*t.cfg = *cfg
 
-	if iR, ok := t.conn.rooms.Load(t.cfg.RoomID); ok {
-		r := iR.([]*HipChat)
-		r = append(r, t)
-		t.conn.rooms.Store(t.cfg.RoomID, r)
-	} else {
-		r := []*HipChat{t}
-		t.conn.rooms.Store(t.cfg.RoomID, r)
-	}
+	t.conn.Lock()
+	t.conn.rooms = append(t.conn.rooms, t)
+	t.conn.Unlock()
 
 	go t.listener()
 
@@ -72,6 +68,9 @@ func NewOrGet(c map[string]interface{}) (*HipChat, error) {
 
 type HipChat struct {
 	sync.Mutex
+
+	lastMsgID  string
+	maxResults int
 
 	cfg     *Config
 	chIn    chan *lib.Message
@@ -122,20 +121,21 @@ func (t *HipChat) Exit() {
 	t.exiting = true
 	t.Unlock()
 
-	if iR, ok := t.conn.rooms.Load(t.cfg.RoomID); ok {
-		var n []*HipChat
-		for _, i := range iR.([]*HipChat) {
-			if i.cfg.RoomID != t.cfg.RoomID {
-				n = append(n, i)
-			}
-		}
+	t.conn.Lock()
+	defer t.conn.Unlock()
 
-		if len(n) == 0 {
-			t.conn.rooms.Delete(t.cfg.RoomID)
-			close(t.chIn)
-			return
+	var n []*HipChat
+	for _, i := range t.conn.rooms {
+		if i.cfg.RoomID != t.cfg.RoomID {
+			n = append(n, i)
 		}
-
-		t.conn.rooms.Store(t.cfg.RoomID, n)
 	}
+
+	t.conn.rooms = n
+
+	if len(t.conn.rooms) == 0 {
+		close(t.chIn)
+		return
+	}
+
 }
