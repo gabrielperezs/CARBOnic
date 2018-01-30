@@ -10,48 +10,35 @@ import (
 )
 
 const (
-	dupExpiration    = 10 * time.Second
-	dupCleanInterval = 5 * time.Minute
+	dupExpiration = 5 * time.Second
 )
 
 var (
 	localCache = &sync.Map{}
 )
 
-func init() {
-	go func() {
-		ticker := time.NewTicker(dupCleanInterval)
-		for _ = range ticker.C {
-			cleanChech(time.Now())
-		}
-	}()
-}
-
 func cleanChech(n time.Time) {
 	localCache.Range(func(k, v interface{}) bool {
 		if n.After(v.(time.Time).Add(dupExpiration)) {
-			log.Printf("Auto-Deleted %s, %s - %s", k.(string), v.(time.Time).Add(dupExpiration), n)
+			log.Printf("Deleted %s, %s", k.(string), v.(time.Time).Add(dupExpiration).Sub(n))
 			localCache.Delete(k.(string))
 		}
 		return true
 	})
 }
 
-func IsDupMessage(key string, m *Message) bool {
-	mur := murmur3.Sum32([]byte(m.Msg))
-	k := fmt.Sprintf("%s_%d_%d", key, mur, m.Score)
+func IsDupMessage(key, m string) bool {
+	mur := murmur3.Sum32([]byte(m))
+	k := fmt.Sprintf("%s_%d", key, mur)
 
 	n := time.Now()
 	cleanChech(n)
 
-	_, ok := localCache.Load(k)
-	if !ok {
-		log.Printf("Stored %s", k)
-		localCache.Store(k, n)
-		return false
+	_, ok := localCache.LoadOrStore(k, n)
+	if ok {
+		//log.Printf("Dup %s %d:%d %d:%d", k, oldN.(time.Time).Minute(), oldN.(time.Time).Second(), n.Minute(), n.Second())
+		return true
 	}
 
-	log.Printf("Dup %s", k)
-	localCache.Store(k, n)
-	return true
+	return false
 }

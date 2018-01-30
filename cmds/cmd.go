@@ -32,12 +32,13 @@ func Commands(plugin lib.Plugin, from, Msg string) {
 
 	maxLevelAlarms := plugin.MinScore()
 
+	log.Printf("[%s] CMD: %s", plugin.Group().GetName(), Msg)
+
 	switch parts[0] {
 	case cmdCATCH:
 
 		for _, v := range g.GetInputs() {
 			input := v.(lib.Input)
-			fmt.Println(input.GetLabel())
 			if input.HasAlarms() {
 				if input.GetScore() > maxLevelAlarms {
 					maxLevelAlarms = input.GetScore()

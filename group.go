@@ -48,9 +48,14 @@ func (g *Group) Chan() chan *lib.Message {
 
 func (g *Group) start() {
 
+	g.Lock()
 	g.Ch = make(chan *lib.Message, groupMaxMessages)
+	g.Unlock()
 
-	for _, cfg := range g.Chat {
+	// Chats
+	g.chats = make([]lib.Chat, len(g.Chat))
+
+	for i, cfg := range g.Chat {
 		c, err := chats.Get(cfg)
 		if err != nil {
 			log.Printf("ERROR: %s", err)
@@ -58,24 +63,21 @@ func (g *Group) start() {
 		}
 
 		c.SetGroup(g)
-
-		g.Lock()
-		g.chats = append(g.chats, c)
-		g.Unlock()
+		g.chats[i] = c
 	}
 
-	for _, cfg := range g.Input {
-		i, err := inputs.Get(cfg)
+	// Inputs
+	g.inputs = make([]lib.Input, len(g.Input))
+
+	for i, cfg := range g.Input {
+		c, err := inputs.Get(cfg)
 		if err != nil {
 			log.Printf("ERROR: %s", err)
 			continue
 		}
 
-		i.SetGroup(g)
-
-		g.Lock()
-		g.inputs = append(g.inputs, i)
-		g.Unlock()
+		c.SetGroup(g)
+		g.inputs[i] = c
 	}
 
 	go g.listen()
@@ -88,7 +90,11 @@ func (g *Group) listen() {
 	for message := range g.Ch {
 		log.Printf("[%s] - %d - %s", g.Name, message.Score, message.Msg)
 		for _, chat := range g.chats {
+			log.Printf("Found chat [%s] %s", g.Name, chat.GetLabel())
+
 			if message.Score >= chat.MinScore() {
+
+				log.Printf("Send [%s] %s", g.Name, chat.GetLabel())
 
 				g.Lock()
 				e := g.exiting
@@ -100,7 +106,7 @@ func (g *Group) listen() {
 				select {
 				case chat.Chan() <- message:
 				default:
-					log.Printf("ERROR [%s]: chat channel full", g.Name)
+					log.Printf("ERROR [%s] %s: chat channel full", g.Name, chat.GetLabel())
 				}
 			}
 		}
@@ -132,8 +138,10 @@ func (g *Group) Exit() {
 	}
 	wg.Wait()
 
+	g.Lock()
 	if g.Ch != nil {
 		close(g.Ch)
 		g.Ch = nil
 	}
+	g.Unlock()
 }

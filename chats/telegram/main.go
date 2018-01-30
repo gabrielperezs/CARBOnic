@@ -85,6 +85,10 @@ func (t *Telegram) listener() {
 	}
 }
 
+func (t *Telegram) GetLabel() string {
+	return fmt.Sprintf("Telegram %d (%d)", t.cfg.Group, t.cfg.MinScore)
+}
+
 func (t *Telegram) MinScore() int {
 	return t.cfg.MinScore
 }

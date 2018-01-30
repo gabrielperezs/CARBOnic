@@ -14,6 +14,7 @@ type Group interface {
 }
 
 type Chat interface {
+	GetLabel() string
 	MinScore() int
 	SetGroup(g Group)
 	Group() Group

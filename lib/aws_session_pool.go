@@ -86,7 +86,7 @@ func (s *Session) connect() {
 	sess, err := session.NewSessionWithOptions(opt)
 
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		log.Printf("AWS Session ERROR: failed to create session: ", err)
 		return
 	}
 

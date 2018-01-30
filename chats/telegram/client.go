@@ -63,6 +63,9 @@ func (tb *TelegramBOT) listener() {
 
 		for _, t := range tb.r {
 			if t.cfg.Group == update.Message.Chat.ID {
+				if lib.IsDupMessage(fmt.Sprintf("telegram_cmd_%d", update.Message.Chat.ID), update.Message.Text) {
+					continue
+				}
 				cmds.Commands(t, update.Message.From.String(), update.Message.Text)
 				group = true
 			}
@@ -76,11 +79,6 @@ func (tb *TelegramBOT) listener() {
 }
 
 func (tb *TelegramBOT) Send(g int64, m *lib.Message) error {
-
-	// If the same message was sent few seconds ago just discard it
-	if lib.IsDupMessage(fmt.Sprintf("telegram_%d", g), m) {
-		return nil
-	}
 
 	msg := tgbotapi.NewMessage(g, m.Msg)
 	if _, err := tb.bot.Send(msg); err != nil {

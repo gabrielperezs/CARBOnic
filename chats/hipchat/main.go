@@ -86,6 +86,10 @@ func (t *HipChat) listener() {
 	}
 }
 
+func (t *HipChat) GetLabel() string {
+	return fmt.Sprintf("HipChat %s (%d)", t.cfg.RoomID, t.cfg.MinScore)
+}
+
 func (t *HipChat) MinScore() int {
 	return t.cfg.MinScore
 }
