@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	hipchatRetry          = 60 // 60 seconds
-	hipChatInterval int32 = 15 // Will be modify with random 0 to 5
+	hipchatRetry                  = 60 // 60 seconds
+	hipChatInterval         int32 = 15 // Will be modify with random 0 to 5
+	hipchatRoomPoolInterval       = 5 * time.Second
 )
 
 func newConnection(token string) *HipChatClient {
@@ -124,7 +125,7 @@ func (hb *HipChatClient) receiver() {
 				t.maxResults = 10
 			}
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(hipchatRoomPoolInterval)
 		}
 
 		time.Sleep(time.Duration(hipChatInterval+rand.Int31n(5)) * time.Second)
