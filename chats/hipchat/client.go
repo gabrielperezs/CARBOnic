@@ -2,8 +2,11 @@ package hipchat
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"sync"
 	"time"
 
@@ -41,24 +44,40 @@ type HipChatClient struct {
 func (hb *HipChatClient) sender(roomID string, message *lib.Message) {
 
 	var err error
+	var resp *http.Response
 
 	if message.Score > 5 {
 		notifRq := &hipchat.NotificationRequest{
 			Color:   "red",
 			Message: fmt.Sprintf("@all %s", message.Msg),
 		}
-		_, err = hb.client.Room.Notification(roomID, notifRq)
+		resp, err = hb.client.Room.Notification(roomID, notifRq)
 	} else {
 		msgReq := &hipchat.RoomMessageRequest{
 			Message: fmt.Sprintf("%s", message.Msg),
 		}
-		_, err = hb.client.Room.Message(roomID, msgReq)
+		resp, err = hb.client.Room.Message(roomID, msgReq)
 	}
 
 	if err != nil {
+		hb.resetCli(resp)
 		log.Printf("HipChat Pull ERROR [%s]: %s", roomID, err)
 	}
 
+}
+
+func (hb *HipChatClient) resetCli(resp *http.Response) {
+	if resp == nil {
+		return
+	}
+	if resp.Body == nil {
+		return
+	}
+
+	io.Copy(ioutil.Discard, resp.Body)
+	resp.Body.Close()
+	resp.Close = true
+	resp.Request.Close = true
 }
 
 func (hb *HipChatClient) receiver() {
@@ -84,6 +103,7 @@ func (hb *HipChatClient) receiver() {
 			})
 
 			if err != nil {
+				hb.resetCli(resp)
 				log.Printf("HipChat Pull ERROR [RoomID %s]: %s", roomID, err)
 				log.Printf("HipChat Pull ERROR [RoomID %s] response: %#v", roomID, resp)
 				log.Printf("HipChat Pull [RoomID %s] re-try in %d seconds", roomID, hipchatRetry)
