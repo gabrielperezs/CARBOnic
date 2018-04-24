@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
+	"log/syslog"
 	"os"
 	"os/signal"
 	"sync"
@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	version = "0.9"
+	version = "0.9.1"
 )
 
 type Config struct {
@@ -42,8 +42,6 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "Debug mode")
 	flag.Parse()
 
-	log.Printf("Starting v%s", version)
-
 	reload()
 
 	signal.Notify(chSign, syscall.SIGHUP, syscall.SIGUSR1, syscall.SIGUSR2, syscall.SIGINT, syscall.SIGKILL, os.Interrupt, syscall.SIGTERM)
@@ -54,6 +52,16 @@ func main() {
 }
 
 func reload() {
+
+	if !debug {
+		logwriter, e := syslog.New(syslog.LOG_INFO|syslog.LOG_USER, "CARBOnic")
+		if e == nil {
+			log.SetFlags(0)
+			log.SetOutput(logwriter)
+		}
+	}
+
+	log.Printf("Starting v%s", version)
 
 	mu.Lock()
 	closeGroups()
@@ -69,10 +77,6 @@ func reload() {
 
 	mu.Lock()
 	conf = *c
-	if !debug {
-		log.SetFlags(0)
-		log.SetOutput(new(logWriter))
-	}
 	mu.Unlock()
 
 	for _, g := range conf.Group {
@@ -105,11 +109,4 @@ func sing() {
 			chMain <- true
 		}
 	}
-}
-
-type logWriter struct {
-}
-
-func (writer logWriter) Write(bytes []byte) (int, error) {
-	return fmt.Print(string(bytes))
 }

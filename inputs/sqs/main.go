@@ -30,28 +30,31 @@ type config struct {
 
 func NewOrGet(c map[string]interface{}) (*SQS, error) {
 
-	if _, ok := c["URL"]; !ok {
+	cfg := &config{}
+
+	for k, v := range c {
+		switch strings.ToLower(k) {
+		case "url":
+			cfg.URL = v.(string)
+		case "region":
+			cfg.Region = v.(string)
+		case "score":
+			cfg.Score = int(v.(int64))
+		case "profile":
+			cfg.Profile = v.(string)
+		}
+	}
+
+	if cfg.URL == "" {
 		return nil, fmt.Errorf("SQS ERROR: URL not found or invalid")
 	}
 
-	if _, ok := c["Region"]; !ok {
+	if cfg.Region == "" {
 		return nil, fmt.Errorf("SQS ERROR: Region not found or invalid")
 	}
 
-	if _, ok := c["Score"]; !ok {
+	if cfg.Score <= 0 {
 		return nil, fmt.Errorf("SQS ERROR: Score not found or invalid")
-	}
-
-	profile := ""
-	if _, ok := c["Profile"]; ok {
-		profile = c["Profile"].(string)
-	}
-
-	cfg := &config{
-		URL:     c["URL"].(string),
-		Region:  c["Region"].(string),
-		Score:   int(c["Score"].(int64)),
-		Profile: profile,
 	}
 
 	var (

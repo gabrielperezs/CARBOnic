@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gabrielperezs/CARBOnic/cmds"
@@ -16,9 +17,10 @@ import (
 )
 
 const (
-	hipchatRetry                  = 60 // 60 seconds
-	hipChatInterval         int32 = 15 // Will be modify with random 0 to 5
-	hipchatRoomPoolInterval       = 5 * time.Second
+	hipchatRetry                   = 60 // 60 seconds
+	hipChatInterval         int32  = 15 // Will be modify with random 0 to 5
+	hipchatRoomPoolInterval        = 5 * time.Second
+	maxClientCalls          uint64 = 100
 )
 
 func newConnection(token string) *HipChatClient {
@@ -39,6 +41,8 @@ type HipChatClient struct {
 	token  string
 	client *hipchat.Client
 	rooms  []*HipChat
+
+	count uint64
 }
 
 func (hb *HipChatClient) sender(roomID string, message *lib.Message) {
@@ -62,11 +66,22 @@ func (hb *HipChatClient) sender(roomID string, message *lib.Message) {
 	if err != nil {
 		hb.resetCli(resp)
 		log.Printf("HipChat Pull ERROR [%s]: %s", roomID, err)
+		return
 	}
 
+	hb.counter(resp)
+}
+
+func (hb *HipChatClient) counter(resp *http.Response) {
+	n := atomic.AddUint64(&hb.count, 1)
+	if n > maxClientCalls {
+		hb.resetCli(resp)
+	}
 }
 
 func (hb *HipChatClient) resetCli(resp *http.Response) {
+	atomic.StoreUint64(&hb.count, 0)
+
 	if resp == nil {
 		return
 	}
@@ -111,6 +126,8 @@ func (hb *HipChatClient) receiver() {
 				time.Sleep(time.Second * hipchatRetry)
 				continue
 			}
+
+			hb.counter(resp)
 
 			for _, m := range hist.Items {
 

@@ -3,6 +3,7 @@ package hipchat
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/gabrielperezs/CARBOnic/lib"
@@ -19,22 +20,29 @@ type Config struct {
 
 func NewOrGet(c map[string]interface{}) (*HipChat, error) {
 
-	if _, ok := c["Token"]; !ok {
+	cfg := &Config{}
+
+	for k, v := range c {
+		switch strings.ToLower(k) {
+		case "token":
+			cfg.Token = v.(string)
+		case "roomid":
+			cfg.RoomID = v.(string)
+		case "minscore":
+			cfg.MinScore = int(v.(int64))
+		}
+	}
+
+	if cfg.Token == "" {
 		return nil, fmt.Errorf("HIPCHAT ERROR: Token not found or invalid")
 	}
 
-	if _, ok := c["MinScore"]; !ok {
-		return nil, fmt.Errorf("HIPCHAT ERROR: MinScore not defined")
-	}
-
-	if _, ok := c["RoomID"]; !ok {
+	if cfg.RoomID == "" {
 		return nil, fmt.Errorf("HIPCHAT ERROR: RoomID not defined")
 	}
 
-	cfg := &Config{
-		Token:    c["Token"].(string),
-		MinScore: int(c["MinScore"].(int64)),
-		RoomID:   c["RoomID"].(string),
+	if cfg.MinScore <= 0 {
+		return nil, fmt.Errorf("HIPCHAT ERROR: MinScore not defined")
 	}
 
 	var ok bool

@@ -129,6 +129,10 @@ func (g *Group) Exit() {
 
 	var wg sync.WaitGroup
 	for _, c := range g.chats {
+		if c == nil {
+			log.Printf("ERROR [%s]: Exiting.. Invalid chat interface", g.Name)
+			continue
+		}
 		wg.Add(1)
 		go func(c lib.Chat) {
 			defer wg.Done()
@@ -138,6 +142,10 @@ func (g *Group) Exit() {
 	wg.Wait()
 
 	for _, c := range g.inputs {
+		if c == nil {
+			log.Printf("ERROR [%s]: Exiting.. Invalid input interface", g.Name)
+			continue
+		}
 		wg.Add(1)
 		go func(c lib.Input) {
 			defer wg.Done()
