@@ -21,6 +21,8 @@ const (
 	hipChatInterval         int32  = 15 // Will be modify with random 0 to 5
 	hipchatRoomPoolInterval        = 5 * time.Second
 	maxClientCalls          uint64 = 100
+	maxTimeout                     = 10 * time.Second
+	idleTimeout                    = 30 * time.Second
 )
 
 func newConnection(token string) *HipChatClient {
@@ -28,7 +30,19 @@ func newConnection(token string) *HipChatClient {
 	hcc := &HipChatClient{
 		token:  token,
 		client: hipchat.NewClient(token),
+		htclient: &http.Client{
+			Timeout: maxTimeout * 2,
+			Transport: &http.Transport{
+				ExpectContinueTimeout: maxTimeout,
+				ResponseHeaderTimeout: maxTimeout,
+				TLSHandshakeTimeout:   maxTimeout,
+				IdleConnTimeout:       idleTimeout,
+				MaxIdleConns:          10,
+			},
+		},
 	}
+
+	hcc.client.SetHTTPClient(hcc.htclient)
 
 	go hcc.receiver()
 
@@ -38,9 +52,10 @@ func newConnection(token string) *HipChatClient {
 type HipChatClient struct {
 	sync.Mutex
 
-	token  string
-	client *hipchat.Client
-	rooms  []*HipChat
+	token    string
+	client   *hipchat.Client
+	rooms    []*HipChat
+	htclient *http.Client
 
 	count uint64
 }

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	SESSION_INTERVAL time.Duration = 1 * time.Hour
+	SESSION_INTERVAL time.Duration = 24 * time.Hour
 	SESSION_RETRY    time.Duration = 30 * time.Second
 )
 
@@ -65,7 +65,7 @@ func (s *Session) loopSession() {
 	for {
 		select {
 		case <-s.tick.C:
-			log.Println("Renew session with AWS", s.lastConnection)
+			log.Printf("Renew session with AWS %s", s.lastConnection)
 			s.connect()
 		case <-s.done:
 			return
@@ -86,7 +86,7 @@ func (s *Session) connect() {
 	sess, err := session.NewSessionWithOptions(opt)
 
 	if err != nil {
-		log.Printf("AWS Session ERROR: failed to create session: ", err)
+		log.Printf("AWS Session ERROR: failed to create session: %s", err)
 		return
 	}
 
