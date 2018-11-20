@@ -79,7 +79,8 @@ func (s *Session) connect() {
 
 	if s.Profile != "" {
 		opt = session.Options{
-			Profile: s.Profile,
+			Profile:           s.Profile,
+			SharedConfigState: session.SharedConfigEnable,
 		}
 	}
 
