@@ -67,8 +67,10 @@ func (hb *HipChatClient) sender(roomID string, message *lib.Message) {
 
 	if message.Score > 5 {
 		notifRq := &hipchat.NotificationRequest{
-			Color:   "red",
-			Message: fmt.Sprintf("@all %s", message.Msg),
+			Color:         "red",
+			Notify:        true,
+			Message:       fmt.Sprintf("@all %s", message.Msg),
+			MessageFormat: "text",
 		}
 		resp, err = hb.client.Room.Notification(roomID, notifRq)
 	} else {
