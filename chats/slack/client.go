@@ -77,7 +77,13 @@ func (tb *SlackBOT) listener() {
 					if err != nil {
 						cmds.Commands(t, "unknown", ev.Text)
 					}
-					cmds.Commands(t, info.Profile.DisplayName, ev.Text)
+					var name string
+					if info.Profile.DisplayName == "" {
+						name = info.Profile.RealName
+					} else {
+						name = info.Profile.DisplayName
+					}
+					cmds.Commands(t, name, ev.Text)
 				}
 			}
 
@@ -92,11 +98,25 @@ func (tb *SlackBOT) listener() {
 
 }
 
-func (tb *SlackBOT) Send(g string, m *lib.Message) error {
-	_, _, err := tb.rtm.PostMessage(
-		g,
-		slack.MsgOptionText(m.Msg, false),
-	)
+func (tb *SlackBOT) Send(g string, message *lib.Message) error {
+	var err error
+	if message.Score > 5 {
+		_, _, err = tb.rtm.PostMessage(
+			g,
+			slack.MsgOptionText(message.Msg, false),
+			slack.MsgOptionAttachments(
+				slack.Attachment{
+					Color: "#FB4444",
+					Text:  ":bell: <!channel>",
+				},
+			),
+		)
+	} else {
+		_, _, err = tb.rtm.PostMessage(
+			g,
+			slack.MsgOptionText(message.Msg, false),
+		)
+	}
 	if err != nil {
 		return err
 	}
