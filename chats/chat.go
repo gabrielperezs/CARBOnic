@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gabrielperezs/CARBOnic/chats/hipchat"
+	"github.com/gabrielperezs/CARBOnic/chats/slack"
 	"github.com/gabrielperezs/CARBOnic/chats/telegram"
 	"github.com/gabrielperezs/CARBOnic/lib"
 )
@@ -21,6 +22,8 @@ func Get(cfg interface{}) (lib.Chat, error) {
 		return telegram.NewOrGet(c)
 	case "hipchat":
 		return hipchat.NewOrGet(c)
+	case "slack":
+		return slack.NewOrGet(c)
 	default:
 		return nil, fmt.Errorf("Plugin don't exists: %s", c["Type"])
 	}

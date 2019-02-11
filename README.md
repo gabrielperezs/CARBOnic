@@ -1,8 +1,8 @@
 [![Build Status](https://travis-ci.org/gabrielperezs/CARBOnic.svg?branch=master)](https://travis-ci.org/gabrielperezs/CARBOnic) [![Go Report Card](https://goreportcard.com/badge/github.com/gabrielperezs/CARBOnic)](https://goreportcard.com/report/github.com/gabrielperezs/CARBOnic)
 
-CARBOnic - Trigger SQS messages to Telegram and HipChat
+CARBOnic - Trigger SQS messages to Telegram, HipChat and Slack
 ------------
-It's a daemon to "listen" messages from SQS and send it to HipChat or Telegram. Really useful to handle alarms from AWS CloudWatch (SNS -> SQS).
+It's a daemon to "listen" messages from SQS and send it to a chat platform. Really useful to handle alarms from AWS CloudWatch (SNS -> SQS).
 
 You can organice the alarms based in groups and level of the alarms. Depends of the alarm the message will be send to all the channels or just to one.
 

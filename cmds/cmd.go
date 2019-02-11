@@ -20,7 +20,7 @@ var (
 )
 
 func Commands(plugin lib.Plugin, from, Msg string) {
-	if !strings.HasPrefix(Msg, "/") {
+	if !strings.HasPrefix(Msg, "/") && !strings.HasPrefix(Msg, "+") {
 		return
 	}
 
