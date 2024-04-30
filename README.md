@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/gabrielperezs/CARBOnic.svg?branch=master)](https://travis-ci.org/gabrielperezs/CARBOnic) [![Go Report Card](https://goreportcard.com/badge/github.com/gabrielperezs/CARBOnic)](https://goreportcard.com/report/github.com/gabrielperezs/CARBOnic)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gabrielperezs/CARBOnic)](https://goreportcard.com/report/github.com/gabrielperezs/CARBOnic)
 
 CARBOnic - Trigger SQS messages to Telegram, HipChat and Slack
 ------------
