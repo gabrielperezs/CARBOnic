@@ -1,0 +1,68 @@
+name: Upload Release Asset
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: Build linux amd64
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o cabronic_amd64 -v .
+
+      - name: Build linux arm64
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o cabronic_arm64 -v .
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload linux amd64
+        id: upload-release-asset-linux-amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: cabronic_amd64
+          asset_name: cabronic_amd64
+          asset_content_type: application/binary
+
+      - name: Upload linux arm64
+        id: upload-release-asset-linux-arm64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: cabronic_arm64
+          asset_name: cabronic_arm64
+          asset_content_type: application/binary
