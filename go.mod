@@ -1,6 +1,6 @@
 module github.com/gabrielperezs/CARBOnic
 
-go 1.22
+go 1.23.0
 
 require (
 	github.com/BurntSushi/toml v1.3.2
@@ -20,5 +20,5 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 )
